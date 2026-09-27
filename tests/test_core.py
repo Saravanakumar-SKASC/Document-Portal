@@ -13,7 +13,7 @@ def test_exception_outside_except_block_does_not_crash():
 
 def test_exception_wraps_cause_with_traceback():
     try:
-        1 / 0
+        _ = 1 / 0
     except ZeroDivisionError as e:
         err = DocumentPortalException("Division failed", e)
     assert "ZeroDivisionError" in err.traceback_str

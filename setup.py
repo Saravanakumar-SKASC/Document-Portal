@@ -1,8 +1,10 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 setup(
     name="document_portal",
-    author="Saravanakumar",
-    version="0.1",
-    packages=find_packages(),
+    author="Saravanakumar N",
+    version="1.0.0",
+    description="LLM document intelligence: analyze, chat (RAG) and compare documents",
+    python_requires=">=3.11",
+    packages=find_packages(exclude=["tests", "tests.*"]),
 )

@@ -4,7 +4,7 @@ import os
 import re
 import shutil
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from langchain_core.documents import Document
@@ -16,7 +16,7 @@ SUPPORTED_EXTENSIONS = {".pdf", ".txt", ".md"}
 
 
 def new_session_id(prefix: str = "session") -> str:
-    return f"{prefix}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
+    return f"{prefix}_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
 
 
 def safe_filename(name: str) -> str:
@@ -69,13 +69,13 @@ def save_uploaded_file(uploaded_file, target_dir: str | os.PathLike, allowed_ext
 
 def load_documents(paths) -> list[Document]:
     """Load files into LangChain Documents: one Document per PDF page, one per text file."""
-    import fitz  # PyMuPDF
+    import pymupdf
 
     documents: list[Document] = []
     for path in map(Path, paths):
         ext = path.suffix.lower()
         if ext == ".pdf":
-            with fitz.open(path) as pdf:
+            with pymupdf.open(path) as pdf:
                 for page_num, page in enumerate(pdf, start=1):
                     text = page.get_text().strip()
                     if text:

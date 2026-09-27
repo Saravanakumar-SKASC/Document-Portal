@@ -12,7 +12,7 @@ import os
 import re
 import tempfile
 
-import fitz
+import pymupdf
 import pytest
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.fake_chat_models import FakeListChatModel
@@ -39,10 +39,10 @@ class BagOfWordsEmbeddings(Embeddings):
 
 
 def make_pdf(path, pages: list[str]):
-    doc = fitz.open()
+    doc = pymupdf.open()
     for text in pages:
         page = doc.new_page()
-        page.insert_textbox(fitz.Rect(50, 50, 550, 800), text, fontsize=11)
+        page.insert_textbox(pymupdf.Rect(50, 50, 550, 800), text, fontsize=11)
     doc.save(path)
     doc.close()
     return path

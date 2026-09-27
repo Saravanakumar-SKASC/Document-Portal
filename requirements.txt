@@ -1,11 +1,21 @@
-langchain
-python-dotenv
-ipykernel
-langchain_groq
-langchain_google_genai
-langchain_community
-pypdf
-faiss-cpu
-structlog
-PyMuPDF
--e .
+# LLM / RAG
+langchain-core>=1.0,<2
+langchain-classic>=1.0,<2
+langchain-community>=0.4,<0.5
+langchain-text-splitters>=1.0,<2
+langchain-groq>=1.0,<2
+langchain-google-genai>=4.0,<5
+faiss-cpu>=1.9
+
+# Documents, config, logging
+pymupdf>=1.24
+pydantic>=2.7
+python-dotenv>=1.0
+pyyaml>=6.0
+structlog>=24.1
+
+# Serving
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9
+streamlit>=1.40

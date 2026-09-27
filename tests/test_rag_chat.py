@@ -56,6 +56,15 @@ def test_compression_filters_off_topic_chunks(cloud_pdf, hr_pdf, bow_embeddings)
     assert any("Remote work" in d.page_content for d in compressed)
 
 
+def test_compression_falls_back_when_everything_is_filtered(cloud_pdf, bow_embeddings):
+    from src.multidoc_chat.contextualcompression import build_compression_retriever
+    from src.multidoc_chat.mmr import build_mmr_retriever
+
+    store = MultiDocIngestor(embeddings=bow_embeddings).ingest([cloud_pdf])
+    strict = build_compression_retriever(build_mmr_retriever(store, k=2), bow_embeddings, similarity_threshold=0.99)
+    assert len(strict.invoke("Kubernetes pods")) == 2  # nothing passes 0.99, so MMR results are used
+
+
 def test_retrieval_metrics_and_strategy_comparison(cloud_pdf, hr_pdf, bow_embeddings):
     store = MultiDocIngestor(embeddings=bow_embeddings).ingest([cloud_pdf, hr_pdf])
     examples = [

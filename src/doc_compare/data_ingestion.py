@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-import fitz
+import pymupdf
 
 from exception.custom_exception import DocumentPortalException
 from logger.custom_logger import CustomLogger
@@ -32,7 +32,7 @@ class DocumentIngestion:
 
     def read_pdf(self, pdf_path: Path) -> str:
         try:
-            with fitz.open(pdf_path) as doc:
+            with pymupdf.open(pdf_path) as doc:
                 if doc.is_encrypted:
                     raise DocumentPortalException(f"PDF is encrypted: {Path(pdf_path).name}")
                 pages = [f"\n--- Page {i} ---\n{page.get_text()}" for i, page in enumerate(doc, start=1)]

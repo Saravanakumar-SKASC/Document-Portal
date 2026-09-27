@@ -2,7 +2,7 @@ import os
 import sys
 from pathlib import Path
 
-import fitz
+import pymupdf
 
 from exception.custom_exception import DocumentPortalException
 from logger.custom_logger import CustomLogger
@@ -44,7 +44,7 @@ class DocumentHandler:
     def read_pdf(self, pdf_path: str) -> str:
         try:
             text_chunks = []
-            with fitz.open(pdf_path) as doc:
+            with pymupdf.open(pdf_path) as doc:
                 for page_num, page in enumerate(doc, start=1):
                     text_chunks.append(f"\n--- Page {page_num} ---\n{page.get_text()}")
             text = "\n".join(text_chunks)

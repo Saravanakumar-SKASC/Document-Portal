@@ -20,5 +20,5 @@ def load_config(config_path: str | None = None) -> dict:
     path = Path(config_path or os.getenv("CONFIG_PATH") or DEFAULT_CONFIG_PATH)
     if not path.is_absolute():
         path = PROJECT_ROOT / path
-    with open(path, "r", encoding="utf-8") as file:
+    with open(path, encoding="utf-8") as file:
         return yaml.safe_load(file)

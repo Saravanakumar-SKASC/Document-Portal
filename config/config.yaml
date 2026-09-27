@@ -1,23 +1,36 @@
 faiss_db:
   collection_name: "document_portal"
 
-
 embedding_model:
   provider: "google"
-  model_name: "models/text-embedding-004"
+  model_name: "models/gemini-embedding-001"
+
+text_splitter:
+  chunk_size: 1000
+  chunk_overlap: 150
 
 retriever:
-  top_k: 10
+  top_k: 5
+  # Multi-document chat strategies
+  mmr:
+    fetch_k: 20
+    lambda_mult: 0.5
+  compression:
+    similarity_threshold: 0.35
+
+analysis:
+  # Long documents are truncated before metadata extraction to stay inside the context window
+  max_chars: 60000
 
 llm:
   groq:
     provider: "groq"
-    model_name: "deepseek-r1-distill-llama-70b"
+    model_name: "llama-3.3-70b-versatile"   # alternative: "openai/gpt-oss-120b"
     temperature: 0
     max_output_tokens: 2048
 
   google:
     provider: "google"
-    model_name: "gemini-2.0-flash"
+    model_name: "gemini-2.5-flash"
     temperature: 0
     max_output_tokens: 2048

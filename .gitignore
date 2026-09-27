@@ -1,2 +1,27 @@
-env
+# Secrets
 .env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+
+# Virtual environments
+env/
+.venv/
+venv/
+
+# Runtime output (created by the app)
+logs/
+data/
+faiss_index/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+.ipynb_checkpoints/

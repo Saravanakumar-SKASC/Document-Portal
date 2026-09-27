@@ -1,15 +1,35 @@
-from pydantic import BaseModel, Field
-from typing import Optional, List, Dict, Any, Union
+from typing import List, Union
+
+from pydantic import BaseModel, Field, RootModel
 
 
 class Metadata(BaseModel):
-    Summary: List[str] = Field(default_factory=list, description="Summary of the document")
+    """Structured profile returned by the Document Analyzer."""
+
+    Summary: List[str] = Field(default_factory=list, description="Summary of the document as 3-6 bullet points")
     Title: str
     Author: str
-    DateCreated: str   
+    DateCreated: str
     LastModifiedDate: str
     Publisher: str
     Language: str
     PageCount: Union[int, str]  # Can be "Not Available"
     SentimentTone: str
-    
+
+
+class ChangeFormat(BaseModel):
+    """One page-level difference between two documents."""
+
+    Page: str = Field(description="Page number (or range) where the change occurs")
+    Changes: str = Field(description="Concise description of what changed, or 'NO CHANGE'")
+
+
+class SummaryResponse(RootModel[List[ChangeFormat]]):
+    """List of page-level changes returned by the Document Comparator."""
+
+
+class ChatAnswer(BaseModel):
+    """Answer returned by the RAG chat modules."""
+
+    answer: str
+    sources: List[dict] = Field(default_factory=list, description="Retrieved chunks: source, page, snippet")

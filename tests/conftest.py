@@ -6,36 +6,17 @@ Shared fixtures. Everything runs offline: no API keys, no network.
   returns genuinely relevant chunks (unlike random fake embeddings)
 """
 
-import hashlib
-import math
 import os
-import re
 import tempfile
 
 import pymupdf
 import pytest
-from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.fake_chat_models import FakeListChatModel
 
+from utils.config_loader import load_config
+from utils.offline_models import BagOfWordsEmbeddings  # noqa: F401  (re-exported for tests)
+
 os.environ.setdefault("LOG_DIR", os.path.join(tempfile.gettempdir(), "document_portal_test_logs"))
-
-
-class BagOfWordsEmbeddings(Embeddings):
-    def __init__(self, dim: int = 512):
-        self.dim = dim
-
-    def _embed(self, text: str) -> list[float]:
-        vec = [0.0] * self.dim
-        for token in re.findall(r"[a-z0-9]+", text.lower()):
-            vec[int(hashlib.md5(token.encode()).hexdigest(), 16) % self.dim] += 1.0
-        norm = math.sqrt(sum(v * v for v in vec)) or 1.0
-        return [v / norm for v in vec]
-
-    def embed_documents(self, texts):
-        return [self._embed(t) for t in texts]
-
-    def embed_query(self, text):
-        return self._embed(text)
 
 
 def make_pdf(path, pages: list[str]):
@@ -53,6 +34,9 @@ def isolated_workdir(tmp_path, monkeypatch):
     """Run each test in its own folder so data/ and faiss_index/ never touch the repo."""
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("DATA_STORAGE_PATH", str(tmp_path / "data"))
+    monkeypatch.delenv("API_KEYS", raising=False)
+    # Bag-of-words similarities run lower than real embeddings, so use a lower guardrail threshold
+    monkeypatch.setitem(load_config()["guardrails"], "min_relevance", 0.1)
     return tmp_path
 
 

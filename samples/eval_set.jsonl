@@ -1,0 +1,8 @@
+{"question": "What is the Economy checked baggage allowance?", "expected_source": "demoair_baggage_policy_rev13.pdf", "expected_page": 1, "expected_keywords": ["25 kg"]}
+{"question": "Can passengers use power banks on board?", "expected_source": "demoair_baggage_policy_rev13.pdf", "expected_page": 2, "expected_keywords": ["not"]}
+{"question": "When must brake assembly P/N 2315-0045-001 be replaced?", "expected_source": "demoair_task_card_ata32_brakes.pdf", "expected_page": 1, "expected_keywords": ["flush"]}
+{"question": "Wheel nut torque after brake replacement", "expected_source": "demoair_task_card_ata32_brakes.pdf", "expected_page": 2, "expected_keywords": ["150", "90"]}
+{"question": "What tool is T-3241-06?", "expected_source": "demoair_task_card_ata32_brakes.pdf", "expected_page": 2, "expected_keywords": ["wear pin gauge"]}
+{"question": "What should cabin crew do in severe turbulence?", "expected_source": "demoair_cabin_crew_sop.pdf", "expected_page": 1, "expected_keywords": ["sit down"]}
+{"question": "Who is allowed to open the Emergency Medical Kit?", "expected_source": "demoair_cabin_crew_sop.pdf", "expected_page": 2, "expected_keywords": ["doctor", "nurse"]}
+{"question": "Where is the AED stored?", "expected_source": "demoair_cabin_crew_sop.pdf", "expected_page": 2, "expected_keywords": ["row 1"]}

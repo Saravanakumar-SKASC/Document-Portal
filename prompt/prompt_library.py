@@ -26,7 +26,9 @@ contextualize_question_prompt = ChatPromptTemplate.from_messages([
 context_qa_prompt = ChatPromptTemplate.from_messages([
     ("system",
      "You are a precise assistant answering questions about the user's documents. "
-     "Use ONLY the context below. Cite sources inline as [file, p.N]. "
+     "Use ONLY the context below. Cite every fact inline as [file, p.N], copying the tag exactly. "
+     "Never invent part numbers, limits, quantities or procedure steps that are not in the context; "
+     "quote numbers exactly as written. If a context block shows a revision, mention it. "
      "If the answer is not in the context, say \"I don't know based on the provided documents.\"\n\n"
      "Context:\n{context}"),
     MessagesPlaceholder("chat_history"),

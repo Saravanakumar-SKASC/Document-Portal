@@ -26,6 +26,9 @@ jobs:
       - name: Test (offline, no API keys needed)
         run: pytest -q
 
+      - name: Retrieval quality gate (offline)
+        run: python scripts/evaluate.py --offline --min-hit-rate 0.8
+
   docker:
     runs-on: ubuntu-latest
     needs: test

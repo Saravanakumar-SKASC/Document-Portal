@@ -5,7 +5,7 @@ import pymupdf
 
 from exception.custom_exception import DocumentPortalException
 from logger.custom_logger import CustomLogger
-from utils.document_ops import new_session_id, save_uploaded_file
+from utils.document_ops import check_page_limit, maybe_redact, new_session_id, save_uploaded_file
 
 
 class DocumentIngestion:
@@ -35,7 +35,8 @@ class DocumentIngestion:
             with pymupdf.open(pdf_path) as doc:
                 if doc.is_encrypted:
                     raise DocumentPortalException(f"PDF is encrypted: {Path(pdf_path).name}")
-                pages = [f"\n--- Page {i} ---\n{page.get_text()}" for i, page in enumerate(doc, start=1)]
+                check_page_limit(doc.page_count, Path(pdf_path).name)
+                pages = [f"\n--- Page {i} ---\n{maybe_redact(page.get_text())}" for i, page in enumerate(doc, start=1)]
             return "\n".join(pages)
         except DocumentPortalException:
             raise

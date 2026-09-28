@@ -75,13 +75,17 @@ with chat_tab:
     st.subheader("Ask questions across one or more documents")
     files = st.file_uploader("Upload PDFs or text files", type=["pdf", "txt", "md"], accept_multiple_files=True,
                              key="chat_files")
-    strategy = st.selectbox("Retrieval strategy", STRATEGIES, index=2,
-                            help="MMR diversifies results across files; compression drops redundant/off-topic chunks.")
+    col_strategy, col_revision = st.columns([2, 1])
+    strategy = col_strategy.selectbox(
+        "Retrieval strategy", STRATEGIES, index=STRATEGIES.index("hybrid"),
+        help="hybrid = keywords + meaning (best for part numbers and codes); MMR diversifies results "
+             "across files; compression drops redundant/off-topic chunks.")
+    revision = col_revision.text_input("Document revision (optional)", placeholder="e.g. Rev 13")
     if files and st.button("Build index", type="primary"):
         with st.spinner("Chunking and embedding..."):
             try:
                 ingestor = MultiDocIngestor(embeddings=embeddings)
-                st.session_state.vectorstore = ingestor.ingest(files)
+                st.session_state.vectorstore = ingestor.ingest(files, revision=revision or None)
                 st.session_state.session_id = ingestor.session_id
                 st.session_state.history = []
                 st.success(f"Indexed {len(files)} file(s) · {st.session_state.vectorstore.index.ntotal} chunks")
@@ -101,9 +105,16 @@ with chat_tab:
                                         embeddings=embeddings, session_id=st.session_state.session_id)
                     result = chat.invoke(question, chat_history=st.session_state.history)
                     st.markdown(result["answer"])
+                    if result.get("refused"):
+                        st.info("Not found in the uploaded documents, so no answer was generated.")
+                    elif result.get("grounded"):
+                        st.caption("✅ Every citation points to a retrieved passage.")
+                    else:
+                        st.warning("⚠️ This answer has missing or unverifiable citations. Check the sources.")
                     with st.expander(f"Sources ({len(result['sources'])})"):
                         for s in result["sources"]:
-                            st.markdown(f"**{s['source']}**, p.{s['page']} — {s['snippet']}…")
+                            rev = f" · {s['revision']}" if s.get("revision") else ""
+                            st.markdown(f"**{s['source']}**, p.{s['page']}{rev} — {s['snippet']}…")
                     st.session_state.history += [{"role": "user", "content": question},
                                                  {"role": "assistant", "content": result["answer"]}]
                 except Exception as e:

@@ -17,12 +17,38 @@ retriever:
     lambda_mult: 0.5
   compression:
     similarity_threshold: 0.35
+  # Hybrid = BM25 keyword search + vector search, merged with Reciprocal Rank Fusion.
+  # Keyword search catches exact identifiers (part numbers, ATA chapters, flight numbers).
+  hybrid:
+    bm25_weight: 0.5
+    vector_weight: 0.5
+
+guardrails:
+  # If the best chunk's cosine similarity to the question is below this, answer
+  # "not found in the approved documents" WITHOUT calling the LLM.
+  # Calibrate per embedding model on your golden set (scripts/evaluate.py). Set to null to disable.
+  min_relevance: 0.35
+
+privacy:
+  # Mask emails, phone numbers, payment cards, HKIDs and labelled passport numbers
+  # before text is embedded, stored or sent to an LLM.
+  redact_pii: true
+
+limits:
+  max_file_mb: 25
+  max_pages: 2000
+  max_files_per_request: 20
 
 analysis:
   # Long documents are truncated before metadata extraction to stay inside the context window
   max_chars: 60000
 
 llm:
+  # Retries per call; if the primary provider still fails, the other provider is used
+  # automatically when its API key is configured.
+  max_retries: 2
+  timeout_seconds: 60
+
   groq:
     provider: "groq"
     model_name: "llama-3.3-70b-versatile"   # alternative: "openai/gpt-oss-120b"

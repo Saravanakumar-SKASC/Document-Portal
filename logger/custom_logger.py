@@ -30,6 +30,7 @@ def _configure(log_dir: str) -> str:
 
     structlog.configure(
         processors=[
+            structlog.contextvars.merge_contextvars,  # adds request_id / user_role bound per request
             structlog.processors.TimeStamper(fmt="iso", utc=True, key="timestamp"),
             structlog.processors.add_log_level,
             structlog.processors.EventRenamer(to="event"),

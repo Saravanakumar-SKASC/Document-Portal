@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from utils.config_loader import load_config
-from utils.rag_core import ConversationalRAG, load_faiss_index
+from utils.rag_core import ConversationalRAG, load_faiss_index, relevance_gate_for
 
 
 class SingleDocChat(ConversationalRAG):
@@ -16,7 +16,8 @@ class SingleDocChat(ConversationalRAG):
         vectorstore = load_faiss_index(Path(faiss_dir) / session_id, embeddings)
         top_k = k or load_config()["retriever"]["top_k"]
         retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": top_k})
-        return cls(retriever=retriever, llm=llm, session_id=session_id)
+        return cls(retriever=retriever, llm=llm, session_id=session_id,
+                   relevance_gate=relevance_gate_for(vectorstore))
 
 
 if __name__ == "__main__":

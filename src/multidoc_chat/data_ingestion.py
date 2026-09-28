@@ -27,19 +27,30 @@ class MultiDocIngestor:
             embeddings = ModelLoader().load_embeddings()
         self.embeddings = embeddings
 
-    def ingest(self, uploaded_files):
-        """Returns the FAISS vector store; pick a retrieval strategy with ``build_retriever``."""
+    def ingest(self, uploaded_files, allowed_roles: list[str] | None = None, revision: str | None = None):
+        """
+        Returns the FAISS vector store; pick a retrieval strategy with ``build_retriever``.
+
+        ``allowed_roles`` restricts who may query this collection (e.g. ["engineering"]);
+        ``revision`` (e.g. "Rev 13") is stored on every chunk and shown in citations.
+        """
         try:
             if not uploaded_files:
                 raise DocumentPortalException("No files provided.")
+            max_files = self.config.get("limits", {}).get("max_files_per_request")
+            if max_files and len(uploaded_files) > max_files:
+                raise DocumentPortalException(f"Too many files: {len(uploaded_files)} (limit {max_files}).")
             paths = [save_uploaded_file(f, self.data_dir) for f in uploaded_files]
-            documents = load_documents(paths)
+            documents = load_documents(paths, extra_metadata={"revision": revision})
             splitter_cfg = self.config.get("text_splitter", {})
             chunks = split_documents(documents, splitter_cfg.get("chunk_size", 1000),
                                      splitter_cfg.get("chunk_overlap", 150))
-            self.vectorstore = build_faiss_index(chunks, self.embeddings, self.faiss_dir)
+            session_info = {"session_id": self.session_id, "files": [p.name for p in paths],
+                            "allowed_roles": sorted(set(allowed_roles or [])), "revision": revision,
+                            "chunks": len(chunks)}
+            self.vectorstore = build_faiss_index(chunks, self.embeddings, self.faiss_dir, session_info)
             self.log.info("Multiple documents ingested", files=[p.name for p in paths], chunks=len(chunks),
-                          session_id=self.session_id)
+                          allowed_roles=session_info["allowed_roles"], session_id=self.session_id)
             return self.vectorstore
         except DocumentPortalException:
             raise

@@ -52,19 +52,24 @@ class ModelLoader:
             log.error("Error loading embedding model", error=str(e))
             raise DocumentPortalException("Failed to load embedding model", e) from e
 
-    def load_llm(self):
-        llm_block = self.config["llm"]
-        if self.provider_key not in llm_block:
-            log.error("LLM provider not found in config", provider_key=self.provider_key)
+    def _provider_blocks(self) -> dict:
+        return {k: v for k, v in self.config["llm"].items() if isinstance(v, dict) and "provider" in v}
+
+    def _build_llm(self, provider_key: str):
+        blocks = self._provider_blocks()
+        if provider_key not in blocks:
+            log.error("LLM provider not found in config", provider_key=provider_key)
             raise DocumentPortalException(
-                f"Provider '{self.provider_key}' not found in config. Options: {', '.join(llm_block)}"
+                f"Provider '{provider_key}' not found in config. Options: {', '.join(blocks)}"
             )
 
-        llm_config = llm_block[self.provider_key]
+        llm_config = blocks[provider_key]
         provider = llm_config.get("provider")
         model_name = llm_config.get("model_name")
         temperature = llm_config.get("temperature", 0.2)
         max_tokens = llm_config.get("max_output_tokens", 2048)
+        max_retries = self.config["llm"].get("max_retries", 2)
+        timeout = self.config["llm"].get("timeout_seconds", 60)
         log.info("Loading LLM", provider=provider, model=model_name, temperature=temperature, max_tokens=max_tokens)
 
         if provider == "google":
@@ -72,22 +77,52 @@ class ModelLoader:
 
             return ChatGoogleGenerativeAI(
                 model=model_name,
-                google_api_key=self.api_keys["GOOGLE_API_KEY"],
+                google_api_key=os.getenv("GOOGLE_API_KEY"),
                 temperature=temperature,
                 max_output_tokens=max_tokens,
+                max_retries=max_retries,
+                timeout=timeout,
             )
         if provider == "groq":
             from langchain_groq import ChatGroq
 
             return ChatGroq(
                 model=model_name,
-                api_key=self.api_keys["GROQ_API_KEY"],
+                api_key=os.getenv("GROQ_API_KEY"),
                 temperature=temperature,
                 max_tokens=max_tokens,
+                max_retries=max_retries,
+                request_timeout=timeout,
             )
 
         log.error("Unsupported LLM provider", provider=provider)
         raise DocumentPortalException(f"Unsupported LLM provider: {provider}")
+
+    def _fallback_provider_key(self) -> str | None:
+        """The other configured provider, if its API key is available."""
+        key_for = {"google": "GOOGLE_API_KEY", "groq": "GROQ_API_KEY"}
+        for name, block in self._provider_blocks().items():
+            if name != self.provider_key and os.getenv(key_for.get(block["provider"], "")):
+                return name
+        return None
+
+    def load_llm(self, with_fallback: bool = True):
+        """
+        Primary LLM (LLM_PROVIDER). Each call already retries with backoff; if the
+        provider still fails (outage, rate limit, timeout) the request is re-run on
+        the other provider, so one vendor outage doesn't take the assistant down.
+        """
+        primary = self._build_llm(self.provider_key)
+        fallback_key = self._fallback_provider_key() if with_fallback else None
+        if fallback_key:
+            log.info("LLM fallback enabled", primary=self.provider_key, fallback=fallback_key)
+            return with_fallback_llm(primary, self._build_llm(fallback_key))
+        return primary
+
+
+def with_fallback_llm(primary, fallback):
+    """Wrap ``primary`` so any exception re-runs the same input on ``fallback``."""
+    return primary.with_fallbacks([fallback])
 
 
 if __name__ == "__main__":

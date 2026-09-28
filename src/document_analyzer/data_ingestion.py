@@ -6,7 +6,7 @@ import pymupdf
 
 from exception.custom_exception import DocumentPortalException
 from logger.custom_logger import CustomLogger
-from utils.document_ops import new_session_id, save_uploaded_file
+from utils.document_ops import check_page_limit, maybe_redact, new_session_id, save_uploaded_file
 
 
 class DocumentHandler:
@@ -45,12 +45,18 @@ class DocumentHandler:
         try:
             text_chunks = []
             with pymupdf.open(pdf_path) as doc:
+                if doc.is_encrypted:
+                    raise DocumentPortalException(f"PDF is encrypted: {Path(pdf_path).name}")
+                check_page_limit(doc.page_count, Path(pdf_path).name)
                 for page_num, page in enumerate(doc, start=1):
-                    text_chunks.append(f"\n--- Page {page_num} ---\n{page.get_text()}")
+                    # PII is masked before the text ever reaches the LLM (config privacy.redact_pii)
+                    text_chunks.append(f"\n--- Page {page_num} ---\n{maybe_redact(page.get_text())}")
             text = "\n".join(text_chunks)
             self.log.info("PDF read successfully", pdf_path=pdf_path, session_id=self.session_id,
                           pages=len(text_chunks))
             return text
+        except DocumentPortalException:
+            raise
         except Exception as e:
             self.log.error("Error reading PDF", error=str(e))
             raise DocumentPortalException("Error reading PDF", e) from e
